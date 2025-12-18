@@ -21,7 +21,7 @@ class DFF(Chip):
         super().__init__(name, num_inputs, num_outputs, input_names, output_names)
 
         self.D = False
-        self.q = False
+        self.Q = False
         self.prev_clk = False
     
 
@@ -43,7 +43,7 @@ class DFF(Chip):
         Returns:
             list[bool]: [Q, ~Q]
         """
-        return [self.q, not self.q]
+        return [self.Q, not self.Q]
     
 
     def on_clock(self, clk):
@@ -60,29 +60,91 @@ class DFF(Chip):
         # Rising edge detection
 
         if not self.prev_clk and clk:
-            self.q = self.D
+            self.Q = self.D
         self.prev_clk = clk
     
+
+class Bit(Chip):
+    """
+    1-bit register with load control.
+
+    If load == 1, stores input on next rising clock edge.
+    If load == 0, retains previous value.
+    """
+
+    def __init__(self, name=None, num_inputs=2, num_outputs=1, input_names = None, output_names=None):
+        input_names = input_names or ["in, load"]
+        output_names = output_names or ["out"]
+
+        super().__init__(name, num_inputs, num_outputs, input_names, output_names)
+        self.mux = Mux()
+        self.dff = DFF()
+        self.in_val = False
+        self.load = False
+
+
+    def set_input(self, inputs):
+        """
+        Set input and load signal.
+
+        Args:
+            inputs (list[bool]): [in, load]
+        """
+        self.input, self.load = self.input_handling(inputs, 2, "1 input, 1 load")
+        current_Q, _ = self.dff.compute()
+        next_D = self.mux.compute([self.load, current_Q, self.input])[0]
+        self.dff.set_input(next_D)
+
+
+    def compute(self):
+        """
+        Return current stored bit.
+
+        Returns:
+            list[bool]: [out]
+        """
+        Q, _ = self.dff.compute()
+        return [Q]
+    
+
+    def on_clock(self, clk):
+        """
+        Forward clock to internal DFF.
+
+        Args:
+            clk (bool | int): Current clock level.
+        """
+        self.dff.on_clock(clk)
+
 
 
 if __name__ == "__main__":
     """Example usecases"""
 
     clock = Clock()
-    dff = DFF()
-    clock.subscribe([dff])
+    bit = Bit()
+    clock.subscribe([bit])
     
-    D, Q = dff.compute()
-    print(f"D: {D}, Q: {Q}")
+    # Current output state
+    out = bit.compute()[0]
+    print(f"Out = {out}")
 
-    dff.set_input(1)
+    # Change input, do not load
+    input, load = [True, False]
+    bit.set_input([input, load])
+    print(f"Input = {input}, load = {load}")
+
+    # Output doesn't change when ticked since load is False.
     clock.tick()
-    D, Q = dff.compute()
-    print(f"D: {D}, Q: {Q}")
+    out = bit.compute()[0]
+    print(f"Out = {out}")
 
-    dff.set_input(0)
+    # Change input, DO load
+    input, load = [True, True]
+    bit.set_input([input, load])
+    print(f"Input = {input}, load = {load}")
+
+    # Output changes when ticked since load is True.
     clock.tick()
-    D, Q = dff.compute()
-    print(f"D: {D}, Q: {Q}")
-
-        
+    out = bit.compute()[0]
+    print(f"Out = {out}")

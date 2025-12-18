@@ -111,7 +111,7 @@ class MuxN(Chip):
 
 if __name__ == "__main__":
     """Example usecases"""
-    
+
     mux16 = MuxN(16)
     mux16_inputs_x = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     mux16_inputs_y = [0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1]

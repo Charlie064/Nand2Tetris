@@ -29,7 +29,7 @@ class Clock:
         Advance the clock by one full cycle.
         Subscribed chips are notified on both rising and falling edges.
         """
-        
+
         # Rising edge
         self.clk_lvl = True
         for chip in self.subscribers:
