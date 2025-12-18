@@ -288,3 +288,4 @@ if __name__ == "__main__":
         test = chip()
         test.truth_table()
     
+

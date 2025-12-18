@@ -69,8 +69,8 @@ class Chip:
         """Formats inputs to list and handles incorrect inputs type and length.
 
         Args:
-            inputs (list[bool] | int): 16-bit boolean list or integer.
-            num_inputs (int): number of expected inputs.
+            inputs (list[bool] | int): n-bit boolean list or integer.
+            num_inputs (int): number of expected inputs n.
             input_message (str, optional): specify what the inputs should be.
 
         Returns:
