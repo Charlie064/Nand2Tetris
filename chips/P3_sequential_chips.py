@@ -1,5 +1,6 @@
 from P1_elementary_logic_gates import * 
 from clock import *
+from chip import *
 
 class DFF(Chip):
     """
@@ -117,34 +118,93 @@ class Bit(Chip):
         self.dff.on_clock(clk)
 
 
+class RegisterN(Chip):
+    """
+    N-bit register with load control.
+
+    If load == 1, stores input on next rising clock edge.
+    If load == 0, retains previous value.
+    """
+
+    def __init__(self,  num_bits=16, name=None, input_names = None, output_names=None):
+        self.num_bits = num_bits
+        num_inputs = num_bits + 1
+        num_outputs = num_bits 
+        input_names = input_names or [f"in_{i}" for i in range(num_bits)] + ["load"]
+        output_names = output_names or [f"out_{i}" for i in range(num_bits)]
+
+        super().__init__(name, num_inputs, num_outputs, input_names, output_names)
+        self.bits = [Bit(name=f"bit_{i}") for i in range(num_bits)]
+        self.in_vals = [False]*num_bits
+        self.load = False
+
+
+    def set_input(self, inputs):
+        inputs = self.input_handling(inputs, self.num_inputs, "(N-inputs, 1 load)")
+        self.in_vals = inputs[:-1]
+        load = inputs[-1]
+        """
+        Set inputs and load signal.
+
+        Args:
+            inputs (list[bool]): [in_0, in_1, ..., in_{N-1}, load]
+        """
+        for i in range(self.num_bits):
+            self.bits[i].set_input([self.in_vals[i], load])
+
+
+    def compute(self):
+        """
+        Return current stored value of the register.
+
+        Returns:
+            list[bool]: N-bit output
+        """
+        return [bit.compute()[0] for bit in self.bits]
+    
+
+    def on_clock(self, clk):
+        """
+        Forward clock to internal bits.
+
+        Args:
+            clk (bool | int): Current clock level.
+        """
+        for bit in self.bits:
+            bit.on_clock(clk)
+
+
 
 if __name__ == "__main__":
     """Example usecases"""
 
     clock = Clock()
-    bit = Bit()
-    clock.subscribe([bit])
-    
+    register16 = RegisterN(16)
+    clock.subscribe([register16])
+    input = 0b1100000000000001
+    input = int_to_bool_list(input)
+    load = [False]
+
     # Current output state
-    out = bit.compute()[0]
+    out = register16.compute()
     print(f"Out = {out}")
 
     # Change input, do not load
-    input, load = [True, False]
-    bit.set_input([input, load])
+
+    register16.set_input(input + load)
     print(f"Input = {input}, load = {load}")
 
     # Output doesn't change when ticked since load is False.
     clock.tick()
-    out = bit.compute()[0]
+    out = register16.compute()
     print(f"Out = {out}")
 
     # Change input, DO load
-    input, load = [True, True]
-    bit.set_input([input, load])
+    load = [True]
+    register16.set_input(input + load)
     print(f"Input = {input}, load = {load}")
 
     # Output changes when ticked since load is True.
     clock.tick()
-    out = bit.compute()[0]
+    out = register16.compute()
     print(f"Out = {out}")
