@@ -1,4 +1,4 @@
-from P3_sequential_chips import *
+from P3_sequential_chips import DFF
 
 class Clock:
     """
